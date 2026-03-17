@@ -15,6 +15,9 @@ from PySide6.QtCore import Qt, QByteArray
 from sliceselector.settings import Settings
 from sliceselector.processes.processrunner import ProcessRunner
 from sliceselector.processes.dummyprocess import DummyProcess
+from sliceselector.processes.finddicomseriesprocess import FindDicomSeriesProcess
+
+ROOT_DIRECTORY = 'M:\\data\\emmymaas\\original'
 
 
 class MainWindow(QMainWindow):
@@ -28,7 +31,7 @@ class MainWindow(QMainWindow):
         self._button.clicked.connect(self.handle_button)
         self._cancel_button = QPushButton('Cancel')
         self._cancel_button.clicked.connect(self.handle_cancel_button)
-        self._process = DummyProcess()
+        self._process = FindDicomSeriesProcess(inputs={'root_directory': ROOT_DIRECTORY}, output=None)
         self._process.progress.connect(self.handle_process_progress)
         self._process.canceled.connect(self.handle_process_canceled)
         self._process.failed.connect(self.handle_process_failed)
@@ -86,7 +89,9 @@ class MainWindow(QMainWindow):
         print(f'failed: {e}')
 
     def handle_process_finished(self, output):
-        print(f'finished: {output}')
+        for k, v in output.items():
+            print(k)
+        print(f'found: {len(output.keys())} scans')
     
     # HELPERS
 

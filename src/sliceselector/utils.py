@@ -4,6 +4,8 @@ import math
 import pendulum
 import atexit
 import datetime
+import pydicom
+import pydicom.errors
 from pathlib import Path
 
 
@@ -43,13 +45,19 @@ def duration(seconds):
 
 def singleton(cls):
     _instances = {}
-
     def instance(*args, **kwargs):
         if cls not in _instances:
             _instances[cls] = cls(*args, **kwargs)
         return _instances[cls]
-    
     return instance
+
+
+def is_dicom(f_path):
+    try:
+        pydicom.dcmread(f_path, stop_before_pixels=True)
+        return True
+    except pydicom.errors.InvalidDicomError:
+        return False
 
 
 @singleton
