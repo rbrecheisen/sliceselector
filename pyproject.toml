@@ -1,0 +1,44 @@
+[project]
+name = "sliceselector"
+version = "0.1.0"
+description = ""
+readme = "README.md"
+requires-python = ">=3.11,<3.12"
+authors = [{ name = "Brecheisen", email = "r.brecheisen@maastrichtuniversity.nl" }]
+
+dependencies = [
+    "pyside6>=6.9",
+    "pydicom>=3.0.1",
+    "dicom2nifti>=2.6.2",
+    "numpy>=1.26.4",
+    "pandas>=2.3.2",
+    "openpyxl>=3.1.5",
+    "pendulum>=3.1.0",
+    "pillow>=11.3.0",
+    "python-gdcm>=3.0.26",
+    "torch==2.5.1",
+    "torchvision>=0.20.1",
+    "torchsummary",
+    "totalsegmentator>=2.11.0",
+    "simpleitk>=2.5.2", 
+    "matplotlib",
+]
+
+[project.scripts]
+sliceselector = "sliceselector.app:main"
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.4.1",
+]
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]
