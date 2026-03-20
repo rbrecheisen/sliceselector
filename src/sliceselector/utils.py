@@ -61,18 +61,16 @@ def load_dicom(f_path, stop_before_pixels=False):
 
 @singleton
 class LogManager:
-    def __init__(self, suppress_print=False):
-        self._suppress_print = suppress_print
+    def __init__(self):
         self._listeners = []
-        file_path = os.path.join(Path.home(), 'mosamatic2.log')
-        self._file_handle = open(file_path, 'w', buffering=1)
+        self._file_path = os.path.join(Path.home(), 'sliceselector.log')
+        self._file_handle = open(self._file_path, 'a', buffering=1)
         atexit.register(self.close_file)
 
     def _log(self, level, message):
         timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         message = f'[{timestamp}] {level} : {message}'
-        if not self._suppress_print:
-            print(message)
+        print(message)
         self._file_handle.write(message + '\n')
         self.notify_listeners(message)
         return message

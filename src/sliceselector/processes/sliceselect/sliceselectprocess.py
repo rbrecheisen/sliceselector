@@ -1,11 +1,13 @@
 import os
 import time
 import json
-import traceback
 from pathlib import Path
 from sliceselector.processes.process import Process
 from sliceselector.utils import load_dicom
 from sliceselector.processes.sliceselect.sliceselector import SliceSelector
+from sliceselector.utils import LogManager
+
+LOG = LogManager()
 
 
 class SliceSelectProcess(Process):
@@ -38,7 +40,7 @@ class SliceSelectProcess(Process):
         failed_scans = self.load_failed_scans()
         new_scans = {}
 
-        print(f'Completed: {len(completed_scans)}, failed: {len(failed_scans)}')
+        LOG.info(f'Completed: {len(completed_scans)}, failed: {len(failed_scans)}')
 
         # Find scans
         for root, dirs, files in os.walk(self._root_directory):
@@ -80,14 +82,14 @@ class SliceSelectProcess(Process):
                 result = selector.run()
                 if result.has_errors():
                     failed_scans[suid]['errors'] = result.errors()
-                    print(f'Error processing scan {suid} ({result.errors()}). Skipping...')
+                    LOG.info(f'Error processing scan {suid} ({result.errors()}). Skipping...')
                 else:
                     completed_scans[suid] = new_scans[suid]
                     selected_slices.append(result.data())
             except Exception as e:
                 failed_scans[suid] = new_scans[suid]
                 failed_scans[suid]['errors'] = str(e)
-                print(f'Exception processing scan {suid} ({str(e)}). Skipping...')
+                LOG.info(f'Exception processing scan {suid} ({str(e)}). Skipping...')
             
             # Update progress
             self.progress.emit(step, nr_steps)

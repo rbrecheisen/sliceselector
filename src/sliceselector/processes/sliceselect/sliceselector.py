@@ -1,4 +1,7 @@
 from sliceselector.processes.sliceselect.result import Result
+from sliceselector.utils import LogManager
+
+LOG = LogManager()
 
 
 class SliceSelector:
