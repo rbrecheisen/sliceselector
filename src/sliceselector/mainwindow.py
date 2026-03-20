@@ -15,8 +15,7 @@ from PySide6.QtGui import (
 from PySide6.QtCore import Qt, QByteArray
 from sliceselector.settings import Settings
 from sliceselector.processes.processrunner import ProcessRunner
-from sliceselector.processes.finddicomseriesprocess import FindDicomSeriesProcess
-from sliceselector.processes.selectsliceprocess import SelectSliceProcess
+from sliceselector.processes.sliceselectprocess import SliceSelectProcess
 
 ROOT_DIRECTORY = 'M:\\data\\emmymaas\\original'
 
@@ -33,12 +32,11 @@ class MainWindow(QMainWindow):
         self._cancel_button = QPushButton('Cancel')
         self._cancel_button.clicked.connect(self.handle_cancel_button)
         self._progress_bar = QProgressBar(self, minimum=0, maximum=100, value=0)
-        self._find_process = FindDicomSeriesProcess(inputs={'root_directory': ROOT_DIRECTORY}, output=None)
-        self._find_process.progress.connect(self.handle_find_progress)
-        self._find_process.canceled.connect(self.handle_find_canceled)
-        self._find_process.failed.connect(self.handle_find_failed)
-        self._find_process.finished.connect(self.handle_find_finished)
-        self._select_slice_process = None
+        self._process = SliceSelectProcess(inputs={'root_directory': ROOT_DIRECTORY}, output=None)
+        self._process.progress.connect(self.handle_progress)
+        self._process.canceled.connect(self.handle_canceled)
+        self._process.failed.connect(self.handle_failed)
+        self._process.finished.connect(self.handle_finished)
         self._process_runner = ProcessRunner()
         self.init()
 
@@ -79,7 +77,7 @@ class MainWindow(QMainWindow):
     
     def handle_button(self):
         self._progress_bar.setValue(0)
-        self._process_runner.start(self._find_process)
+        self._process_runner.start(self._process)
 
     def handle_cancel_button(self):
         self._process_runner.cancel()
@@ -89,20 +87,20 @@ class MainWindow(QMainWindow):
     def handle_find_start(self):
         self._progress_bar.setValue(0)
 
-    def handle_find_progress(self, step, nr_steps):
+    def handle_progress(self, step, nr_steps):
         progress = int(float(step+1) / nr_steps * 100.0)
         self._progress_bar.setValue(progress)
         if progress > 100:
             self._progress_bar.setValue(100)
         print('.', sep='', end='', flush=True)
 
-    def handle_find_canceled(self):
+    def handle_canceled(self):
         print(f'find canceled')
 
-    def handle_find_failed(self, e):
+    def handle_failed(self, e):
         print(f'find failed: {e}')
 
-    def handle_find_finished(self, output):
+    def handle_finished(self, output):
         self._progress_bar.setValue(100)
         print(output)
 

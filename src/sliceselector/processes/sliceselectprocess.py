@@ -6,9 +6,9 @@ from sliceselector.processes.process import Process
 from sliceselector.utils import load_dicom
 
 
-class FindDicomSeriesProcess(Process):
+class SliceSelectProcess(Process):
     def __init__(self, inputs, output):
-        super(FindDicomSeriesProcess, self).__init__(inputs, output)
+        super(SliceSelectProcess, self).__init__(inputs, output)
         self._root_directory = inputs.get('root_directory', None)
 
     def load_completed_scans(self):
