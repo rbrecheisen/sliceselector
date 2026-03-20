@@ -52,12 +52,11 @@ def singleton(cls):
     return instance
 
 
-def is_dicom(f_path):
+def load_dicom(f_path, stop_before_pixels=False):
     try:
-        pydicom.dcmread(f_path, stop_before_pixels=True)
-        return True
+        return pydicom.dcmread(f_path, stop_before_pixels=stop_before_pixels)
     except pydicom.errors.InvalidDicomError:
-        return False
+        return None
 
 
 @singleton

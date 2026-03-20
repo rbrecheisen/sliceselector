@@ -1,69 +1,80 @@
-"""
-FindDicomSeriesProcess
-Searches root directory for DICOM series and creates a dictionary with:
-{
-    'suid': {
-        'suid': '',
-        'description': '',
-        'rows': '',
-        'cols': '',
-        'nr_slices': '',
-    }
-}
-"""
 import os
-import json
 import time
-import pydicom
+import json
+from pathlib import Path
 from sliceselector.processes.process import Process
-from sliceselector.utils import is_dicom
+from sliceselector.utils import load_dicom
 
 
 class FindDicomSeriesProcess(Process):
     def __init__(self, inputs, output):
         super(FindDicomSeriesProcess, self).__init__(inputs, output)
-        self._root_direcory = inputs.get('root_directory', None)
-        assert self._root_direcory is not None
-        self._done = self.load_done()
-        print(self._done)
+        self._root_directory = inputs.get('root_directory', None)
 
-    def load_done(self):
-        if os.path.isfile('done.json'):
-            with open('done.json', 'r') as f:
-                return json.load(f)
+    def load_completed_scans(self):
+        state_file = os.path.join(self._root_directory, 'completed.json')
+        if os.path.isfile(state_file):
+            with open(state_file, 'r') as f:
+                return list(json.load(f))
         return []
     
-    def save_done(self, done):
-        with open('done.json', 'w') as f:
-            json.dump(done, f, indent=2)
+    def load_failed_scans(self):
+        state_file = os.path.join(self._root_directory, 'failed.json')
+        if os.path.isfile(state_file):
+            with open(state_file, 'r') as f:
+                return list(json.load(f))
+        return []
     
-    def is_done(self, suid):
-        if self._done is not None:
-            return suid in self._done
-        return False
+    def update_completed_and_failed_scans(self, completed_scans, failed_scans):
+        with open(os.path.join(self._root_directory, 'completed.json'), 'w') as f:
+            json.dump(completed_scans, f, indent=2)
+        with open(os.path.join(self._root_directory, 'failed.json'), 'w') as f:
+            json.dump(failed_scans, f, indent=2)
     
     def execute(self):
-        scans = {}
-        done = []
-        count = 0
-        for root, dirs, files in os.walk(self._root_direcory):
+        completed_scans = self.load_completed_scans()
+        failed_scans = self.load_failed_scans()
+        new_scans = {}
+
+        print(f'Completed: {len(completed_scans)}, failed: {len(failed_scans)}')
+
+        # Find scans
+        for root, dirs, files in os.walk(self._root_directory):
             for f in files:
-                if self.is_canceled():
-                    self.save_done(done)
-                    return scans
                 f_path = os.path.join(root, f)
-                if os.path.isfile(f_path) and is_dicom(f_path):
-                    p = pydicom.dcmread(f_path)
+                p = load_dicom(f_path)
+                if p is not None:
                     suid = getattr(p, 'SeriesInstanceUID', None)
-                    if suid is not None and not self.is_done(suid):
-                        if suid not in scans.keys():
-                            scans[suid] = {'description': '', 'rows': -1, 'cols': -1, 'files': []}
-                        scans[suid]['description'] = getattr(p, 'SeriesDescription', '')
-                        scans[suid]['rows'] = getattr(p, 'Rows', -1)
-                        scans[suid]['cols'] = getattr(p, 'Columns', -1)
-                        scans[suid]['files'].append(f_path)
-                        done.append(suid)
-                        self.progress.emit(count+1, 0)
-                        count += 1
-        self.save_done(done)
-        return scans
+                    if suid is not None and suid not in completed_scans and suid not in failed_scans:
+                        new_scans[suid] = {
+                            'path': str(Path(f_path).parent),
+                            'description': getattr(p, 'SeriesDescription', ''),
+                            'rows': getattr(p, 'Rows', -1),
+                            'columns': getattr(p, 'Columns', -1),
+                            'files': [],
+                        }
+
+        # Collect images for each new scan
+        for suid in new_scans.keys():
+            path = new_scans[suid]['path']
+            for f in os.listdir(path):
+                f_path = os.path.join(path, f)
+                new_scans[suid]['files'].append(f_path)
+
+        # Run slice selection
+        nr_steps = len(new_scans.keys())
+        step = 0
+        for suid in new_scans.keys():
+            if self.is_canceled():
+                self.update_completed_and_failed_scans(completed_scans, failed_scans)
+                return 'CANCELED'
+            if step == 10 or step == 20:
+                failed_scans.append(suid)
+            else:
+                completed_scans.append(suid)
+            self.progress.emit(step, nr_steps)
+            step += 1
+            time.sleep(0.1)
+
+        self.update_completed_and_failed_scans(completed_scans, failed_scans)
+        return 'OK'

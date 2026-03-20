@@ -1,3 +1,4 @@
+import traceback
 from PySide6.QtCore import (
     QObject, 
     QThread, 
@@ -74,7 +75,7 @@ class Process(QObject):
             result = self.execute()
             self.finished.emit(result)
         except Exception as e:
-            self.failed.emit(e)
+            self.failed.emit(traceback.format_exc())
 
     @Slot()
     def _cleanup(self):

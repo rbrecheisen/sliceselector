@@ -6,6 +6,7 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QPushButton,
     QLabel,
+    QProgressBar,
 )
 from PySide6.QtGui import (
     QGuiApplication,
@@ -14,8 +15,8 @@ from PySide6.QtGui import (
 from PySide6.QtCore import Qt, QByteArray
 from sliceselector.settings import Settings
 from sliceselector.processes.processrunner import ProcessRunner
-from sliceselector.processes.dummyprocess import DummyProcess
 from sliceselector.processes.finddicomseriesprocess import FindDicomSeriesProcess
+from sliceselector.processes.selectsliceprocess import SelectSliceProcess
 
 ROOT_DIRECTORY = 'M:\\data\\emmymaas\\original'
 
@@ -31,11 +32,13 @@ class MainWindow(QMainWindow):
         self._button.clicked.connect(self.handle_button)
         self._cancel_button = QPushButton('Cancel')
         self._cancel_button.clicked.connect(self.handle_cancel_button)
-        self._process = FindDicomSeriesProcess(inputs={'root_directory': ROOT_DIRECTORY}, output=None)
-        self._process.progress.connect(self.handle_process_progress)
-        self._process.canceled.connect(self.handle_process_canceled)
-        self._process.failed.connect(self.handle_process_failed)
-        self._process.finished.connect(self.handle_process_finished)
+        self._progress_bar = QProgressBar(self, minimum=0, maximum=100, value=0)
+        self._find_process = FindDicomSeriesProcess(inputs={'root_directory': ROOT_DIRECTORY}, output=None)
+        self._find_process.progress.connect(self.handle_find_progress)
+        self._find_process.canceled.connect(self.handle_find_canceled)
+        self._find_process.failed.connect(self.handle_find_failed)
+        self._find_process.finished.connect(self.handle_find_finished)
+        self._select_slice_process = None
         self._process_runner = ProcessRunner()
         self.init()
 
@@ -63,6 +66,7 @@ class MainWindow(QMainWindow):
         layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         layout.addWidget(self._button)
         layout.addWidget(self._cancel_button)
+        layout.addWidget(self._progress_bar)
         widget = QWidget()
         widget.setLayout(layout)
         self.setCentralWidget(widget)
@@ -74,25 +78,34 @@ class MainWindow(QMainWindow):
         return super().closeEvent(event)
     
     def handle_button(self):
-        self._process_runner.start(self._process)
+        self._progress_bar.setValue(0)
+        self._process_runner.start(self._find_process)
 
     def handle_cancel_button(self):
         self._process_runner.cancel()
 
-    def handle_process_progress(self, step, nr_steps):
-        print(f'progress: {step} / {nr_steps}')
+    # PROCESS EVENTS
 
-    def handle_process_canceled(self):
-        print('canceled')
+    def handle_find_start(self):
+        self._progress_bar.setValue(0)
 
-    def handle_process_failed(self, e):
-        print(f'failed: {e}')
+    def handle_find_progress(self, step, nr_steps):
+        progress = int(float(step+1) / nr_steps * 100.0)
+        self._progress_bar.setValue(progress)
+        if progress > 100:
+            self._progress_bar.setValue(100)
+        print('.', sep='', end='', flush=True)
 
-    def handle_process_finished(self, output):
-        for k, v in output.items():
-            print(k)
-        print(f'found: {len(output.keys())} scans')
-    
+    def handle_find_canceled(self):
+        print(f'find canceled')
+
+    def handle_find_failed(self, e):
+        print(f'find failed: {e}')
+
+    def handle_find_finished(self, output):
+        self._progress_bar.setValue(100)
+        print(output)
+
     # HELPERS
 
     def load_geometry_and_state(self):
