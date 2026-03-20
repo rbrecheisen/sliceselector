@@ -15,7 +15,7 @@ from PySide6.QtGui import (
 from PySide6.QtCore import Qt, QByteArray
 from sliceselector.settings import Settings
 from sliceselector.processes.processrunner import ProcessRunner
-from sliceselector.processes.sliceselectprocess import SliceSelectProcess
+from sliceselector.processes.sliceselect.sliceselectprocess import SliceSelectProcess
 
 ROOT_DIRECTORY = 'M:\\data\\emmymaas\\original'
 
