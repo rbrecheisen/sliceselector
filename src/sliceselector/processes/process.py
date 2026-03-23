@@ -51,7 +51,6 @@ class Process(QObject):
         raise NotImplementedError
 
     def start(self):
-        print('process.start()')
         if self._thread is not None:
             raise RuntimeError("Process already started")
         self._main_thread = QCoreApplication.instance().thread()
@@ -65,7 +64,6 @@ class Process(QObject):
 
     @Slot()
     def _run_internal(self):
-        print('process._run_internal()')
         self.started.emit()
         try:
             if self._cancel:

@@ -14,6 +14,7 @@ class SliceSelectProcess(Process):
     def __init__(self, inputs, output):
         super(SliceSelectProcess, self).__init__(inputs, output)
         self._root_directory = inputs.get('root_directory', None)
+        LOG.info(f'Running SliceSelectProcess from root directory {self._root_directory}')
 
     def load_completed_scans(self):
         state_file = os.path.join(self._root_directory, 'completed.json')
