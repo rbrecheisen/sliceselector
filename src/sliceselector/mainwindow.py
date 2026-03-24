@@ -17,7 +17,7 @@ from sliceselector.settings import Settings
 from sliceselector.processes.processrunner import ProcessRunner
 from sliceselector.processes.sliceselect.sliceselectprocess import SliceSelectProcess
 
-ROOT_DIRECTORY = 'M:\\data\\emmymaas\\original'
+ROOT_DIRECTORY = 'M:\\data\\emmymaas\\13-03-2026\\original'
 
 
 class MainWindow(QMainWindow):
