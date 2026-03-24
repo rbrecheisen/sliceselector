@@ -5,7 +5,10 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QHBoxLayout,
     QPushButton,
+    QFileDialog,
     QLabel,
+    QMessageBox,
+    QLineEdit,
     QProgressBar,
 )
 from PySide6.QtGui import (
@@ -27,16 +30,20 @@ class MainWindow(QMainWindow):
         self._app_title = app_title
         self._app_icon = app_icon
         self._app_version = app_version
+        self._root_dir_line_edit = QLineEdit(
+            placeholderText='Choose root directory...', text=self._settings.get('mainwindow/root_dir', ''))
+        self._root_dir_select_button = QPushButton('Select...')
+        self._root_dir_select_button.clicked.connect(self.handle_root_dir_select_button)
+        self._output_dir_line_edit = QLineEdit(
+            placeholderText='Choose output directory...', text=self._settings.get('mainwindow/output_dir', ''))
+        self._output_dir_select_button = QPushButton('Select...')
+        self._output_dir_select_button.clicked.connect(self.handle_output_dir_select_button)
         self._button = QPushButton('Run process')
         self._button.clicked.connect(self.handle_button)
         self._cancel_button = QPushButton('Cancel')
         self._cancel_button.clicked.connect(self.handle_cancel_button)
         self._progress_bar = QProgressBar(self, minimum=0, maximum=100, value=0)
-        self._process = SliceSelectProcess(inputs={'root_directory': ROOT_DIRECTORY}, output=None)
-        self._process.progress.connect(self.handle_progress)
-        self._process.canceled.connect(self.handle_canceled)
-        self._process.failed.connect(self.handle_failed)
-        self._process.finished.connect(self.handle_finished)
+        self._process = None
         self._process_runner = ProcessRunner()
         self.init()
 
@@ -60,8 +67,16 @@ class MainWindow(QMainWindow):
         app_menu.addAction(exit_action)
 
     def init_layout(self):
+        root_dir_layout = QHBoxLayout()
+        root_dir_layout.addWidget(self._root_dir_line_edit)
+        root_dir_layout.addWidget(self._root_dir_select_button)
+        output_dir_layout = QHBoxLayout()
+        output_dir_layout.addWidget(self._output_dir_line_edit)
+        output_dir_layout.addWidget(self._output_dir_select_button)
         layout = QVBoxLayout()
-        layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+        layout.setAlignment(Qt.AlignmentFlag.AlignTop)        
+        layout.addLayout(root_dir_layout)
+        layout.addLayout(output_dir_layout)
         layout.addWidget(self._button)
         layout.addWidget(self._cancel_button)
         layout.addWidget(self._progress_bar)
@@ -75,9 +90,41 @@ class MainWindow(QMainWindow):
         self.save_geometry_and_state()
         return super().closeEvent(event)
     
+    def handle_root_dir_select_button(self):
+        dir_path = QFileDialog.getExistingDirectory(self, dir=self._settings.get('last_directory', ''))
+        if dir_path:
+            self._root_dir_line_edit.setText(dir_path)
+            self._settings.set('mainwindow/root_dir', dir_path)
+            self._settings.set('last_directory', dir_path)
+
+    def handle_output_dir_select_button(self):
+        dir_path = QFileDialog.getExistingDirectory(self, dir=self._settings.get('last_directory', ''))
+        if dir_path:
+            self._output_dir_line_edit.setText(dir_path)
+            self._settings.set('mainwindow/output_dir', dir_path)
+            self._settings.set('last_directory', dir_path)
+    
     def handle_button(self):
-        self._progress_bar.setValue(0)
-        self._process_runner.start(self._process)
+        root_dir = self._root_dir_line_edit.text()
+        if root_dir != '':
+            if os.path.isdir(root_dir):
+                output_dir = self._output_dir_line_edit.text()
+                if output_dir != '':
+                    if not os.path.isdir(output_dir):
+                        os.makedirs(output_dir, exist_ok=True)
+                    self._progress_bar.setValue(0)
+                    self._process = SliceSelectProcess(inputs={'root_directory': root_dir}, output=output_dir)
+                    self._process.progress.connect(self.handle_progress)
+                    self._process.canceled.connect(self.handle_canceled)
+                    self._process.failed.connect(self.handle_failed)
+                    self._process.finished.connect(self.handle_finished)
+                    self._process_runner.start(self._process)
+                else:
+                    QMessageBox.warning(self, 'Warning', 'Output directory empty')
+            else:
+                QMessageBox.warning(self, 'Warning', 'Root directory does not exist')
+        else:
+            QMessageBox.warning(self, 'Warning', 'Root directory empty')
 
     def handle_cancel_button(self):
         self._process_runner.cancel()
@@ -92,7 +139,6 @@ class MainWindow(QMainWindow):
         self._progress_bar.setValue(progress)
         if progress > 100:
             self._progress_bar.setValue(100)
-        print('.', sep='', end='', flush=True)
 
     def handle_canceled(self):
         print(f'find canceled')
