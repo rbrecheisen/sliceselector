@@ -30,20 +30,9 @@ class SliceSelectProcess(Process):
                 return json.load(f)
         return {}
     
-    def update_completed_and_failed_scans(self, completed_scans, failed_scans):
-        with open(os.path.join(self._root_directory, 'completed.json'), 'w') as f:
-            json.dump(completed_scans, f, indent=2)
-        with open(os.path.join(self._root_directory, 'failed.json'), 'w') as f:
-            json.dump(failed_scans, f, indent=2)
-    
-    def execute(self):
-        completed_scans = self.load_completed_scans()
-        failed_scans = self.load_failed_scans()
+    def find_new_scans(self, completed_scans, failed_scans):
+        LOG.info(f'completed: {len(completed_scans)}, failed: {len(failed_scans)}')
         new_scans = {}
-
-        LOG.info(f'Completed: {len(completed_scans)}, failed: {len(failed_scans)}')
-
-        # Find scans
         for root, dirs, files in os.walk(self._root_directory):
             for f in files:
                 f_path = os.path.join(root, f)
@@ -58,44 +47,114 @@ class SliceSelectProcess(Process):
                             'columns': getattr(p, 'Columns', -1),
                             'files': [],
                         }
-
-        # Collect images for each new scan
         for suid in new_scans.keys():
             path = new_scans[suid]['path']
             for f in os.listdir(path):
                 f_path = os.path.join(path, f)
                 new_scans[suid]['files'].append(f_path)
-
-        # Run slice selection
-        nr_steps = len(new_scans.keys())
+        return new_scans
+    
+    def select_slices_from_scans(self, scans, completed_scans, failed_scans):
+        nr_steps = len(scans.keys())
         step = 0
         selected_slices = []
-        for suid in new_scans.keys():
-
-            # Check for cancelation of task
+        for suid in scans.keys():
             if self.is_canceled():
                 self.update_completed_and_failed_scans(completed_scans, failed_scans)
-                return 'CANCELED'
-            
-            # Run slice selection and update completed/failed lists
+                break
             try:
-                selector = SliceSelector(scan=new_scans[suid])
+                selector = SliceSelector(scan=scans[suid])
                 result = selector.run()
                 if result.has_errors():
+                    failed_scans[suid] = scans[suid]
                     failed_scans[suid]['errors'] = result.errors()
                     LOG.info(f'Error processing scan {suid} ({result.errors()}). Skipping...')
                 else:
-                    completed_scans[suid] = new_scans[suid]
+                    completed_scans[suid] = scans[suid]
                     selected_slices.append(result.data())
             except Exception as e:
-                failed_scans[suid] = new_scans[suid]
+                failed_scans[suid] = scans[suid]
                 failed_scans[suid]['errors'] = str(e)
                 LOG.info(f'Exception processing scan {suid} ({str(e)}). Skipping...')
-            
-            # Update progress
             self.progress.emit(step, nr_steps)
             step += 1
-            time.sleep(0.1)
+        return selected_slices, completed_scans, failed_scans
+    
+    def update_completed_and_failed_scans(self, completed_scans, failed_scans):
+        with open(os.path.join(self._root_directory, 'completed.json'), 'w') as f:
+            json.dump(completed_scans, f, indent=2)
+        with open(os.path.join(self._root_directory, 'failed.json'), 'w') as f:
+            json.dump(failed_scans, f, indent=2)
 
-        self.update_completed_and_failed_scans(completed_scans, failed_scans)
+    def execute(self):
+        completed_scans = self.load_completed_scans()
+        failed_scans = self.load_failed_scans()
+        new_scans = self.find_new_scans(completed_scans, failed_scans)
+        slices, completed_scans, failed_scans = self.select_slices_from_scans(new_scans, completed_scans, failed_scans)
+        for slice in slices:
+            print(f'Found slice: {slice}')
         return 'OK'
+    
+    # def execute(self):
+    #     completed_scans = self.load_completed_scans()
+    #     failed_scans = self.load_failed_scans()
+    #     new_scans = {}
+
+    #     LOG.info(f'Completed: {len(completed_scans)}, failed: {len(failed_scans)}')
+
+    #     # Find scans
+    #     for root, dirs, files in os.walk(self._root_directory):
+    #         for f in files:
+    #             f_path = os.path.join(root, f)
+    #             p = load_dicom(f_path)
+    #             if p is not None:
+    #                 suid = getattr(p, 'SeriesInstanceUID', None)
+    #                 if suid is not None and suid not in completed_scans.keys() and suid not in failed_scans.keys():
+    #                     new_scans[suid] = {
+    #                         'path': str(Path(f_path).parent),
+    #                         'description': getattr(p, 'SeriesDescription', ''),
+    #                         'rows': getattr(p, 'Rows', -1),
+    #                         'columns': getattr(p, 'Columns', -1),
+    #                         'files': [],
+    #                     }
+
+    #     # Collect images for each new scan
+    #     for suid in new_scans.keys():
+    #         path = new_scans[suid]['path']
+    #         for f in os.listdir(path):
+    #             f_path = os.path.join(path, f)
+    #             new_scans[suid]['files'].append(f_path)
+
+    #     # Run slice selection
+    #     nr_steps = len(new_scans.keys())
+    #     step = 0
+    #     selected_slices = []
+    #     for suid in new_scans.keys():
+
+    #         # Check for cancelation of task
+    #         if self.is_canceled():
+    #             self.update_completed_and_failed_scans(completed_scans, failed_scans)
+    #             return 'CANCELED'
+            
+    #         # Run slice selection and update completed/failed lists
+    #         try:
+    #             selector = SliceSelector(scan=new_scans[suid])
+    #             result = selector.run()
+    #             if result.has_errors():
+    #                 failed_scans[suid]['errors'] = result.errors()
+    #                 LOG.info(f'Error processing scan {suid} ({result.errors()}). Skipping...')
+    #             else:
+    #                 completed_scans[suid] = new_scans[suid]
+    #                 selected_slices.append(result.data())
+    #         except Exception as e:
+    #             failed_scans[suid] = new_scans[suid]
+    #             failed_scans[suid]['errors'] = str(e)
+    #             LOG.info(f'Exception processing scan {suid} ({str(e)}). Skipping...')
+            
+    #         # Update progress
+    #         self.progress.emit(step, nr_steps)
+    #         step += 1
+    #         time.sleep(0.1)
+
+    #     self.update_completed_and_failed_scans(completed_scans, failed_scans)
+    #     return 'OK'
