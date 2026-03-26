@@ -164,6 +164,8 @@ class MainWindow(QMainWindow):
     def save_geometry_and_state(self):
         self._settings.set('mainwindow/geometry', self.saveGeometry())
         self._settings.set('mainwindow/state', self.saveState())
+        self._settings.set('mainwindow/root_dir', self._root_dir_line_edit.text())
+        self._settings.set('mainwindow/output_dir', self._output_dir_line_edit.text())
 
     def set_default_size_and_position(self):
         self.resize(1024, 1024)
