@@ -15,9 +15,10 @@ LOG = LogManager()
 
 
 class SliceSelectProcess(Process):
-    def __init__(self, inputs, output):
+    def __init__(self, inputs, output, vertebra):
         super(SliceSelectProcess, self).__init__(inputs, output)
         self._root_directory = inputs.get('root_directory', None)
+        self._vertebra = vertebra
         LOG.info(f'Running SliceSelectProcess from root directory {self._root_directory}')
 
     def load_completed_scans(self):
@@ -92,10 +93,11 @@ class SliceSelectProcess(Process):
         selected_slices = []
         for suid in scans.keys():
             if self.is_canceled():
+                LOG.info('Slice selection was canceled')
                 self.update_completed_and_failed_scans(completed_scans, failed_scans)
                 break
             try:
-                selector = SliceSelector(scan=scans[suid])
+                selector = SliceSelector(scan=scans[suid], vertebra=self._vertebra, output_dir=self.output())
                 result = selector.run()
                 if result.has_errors():
                     failed_scans[suid] = scans[suid]

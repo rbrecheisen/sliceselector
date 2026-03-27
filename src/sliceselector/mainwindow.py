@@ -113,7 +113,7 @@ class MainWindow(QMainWindow):
                     if not os.path.isdir(output_dir):
                         os.makedirs(output_dir, exist_ok=True)
                     self._progress_bar.setValue(0)
-                    self._process = SliceSelectProcess(inputs={'root_directory': root_dir}, output=output_dir)
+                    self._process = SliceSelectProcess(inputs={'root_directory': root_dir}, output=output_dir, vertebra='T4')
                     self._process.progress.connect(self.handle_progress)
                     self._process.canceled.connect(self.handle_canceled)
                     self._process.failed.connect(self.handle_failed)
