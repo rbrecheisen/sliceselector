@@ -15,30 +15,31 @@ LOG = LogManager()
 
 
 class SliceSelectProcess(Process):
-    def __init__(self, inputs, output, vertebra):
+    def __init__(self, inputs, output, vertebra, resume=True):
         super(SliceSelectProcess, self).__init__(inputs, output)
         self._root_directory = inputs.get('root_directory', None)
         self._vertebra = vertebra
-        LOG.info(f'Running SliceSelectProcess from root directory {self._root_directory}')
+        self._resume = resume
+        LOG.info(f'Running SliceSelectProcess from root directory {self._root_directory} (resume: {self._resume})')
 
-    def load_completed_scans(self):
+    def load_completed_scans(self, resume):
         """
         Loads dictionary with scan info for scans that were succesfully processed.
         These scans can be skipped in case the tool needs to resume.
         """
         state_file = os.path.join(self._root_directory, 'completed.json')
-        if os.path.isfile(state_file):
+        if os.path.isfile(state_file) and resume:
             with open(state_file, 'r') as f:
                 return json.load(f)
         return {}
     
-    def load_failed_scans(self):
+    def load_failed_scans(self, resume):
         """
         Loads dictionary of failed scans. When the tool tries to resume it will skip the
         failed scans. No need to try again.
         """
         state_file = os.path.join(self._root_directory, 'failed.json')
-        if os.path.isfile(state_file):
+        if os.path.isfile(state_file) and resume:
             with open(state_file, 'r') as f:
                 return json.load(f)
         return {}
@@ -95,6 +96,7 @@ class SliceSelectProcess(Process):
             if self.is_canceled():
                 LOG.info('Slice selection was canceled')
                 self.update_completed_and_failed_scans(completed_scans, failed_scans)
+                self.canceled.emit()
                 break
             try:
                 selector = SliceSelector(scan=scans[suid], vertebra=self._vertebra, output_dir=self.output())
@@ -116,8 +118,8 @@ class SliceSelectProcess(Process):
         return selected_slices
     
     def execute(self):
-        completed_scans = self.load_completed_scans()
-        failed_scans = self.load_failed_scans()
+        completed_scans = self.load_completed_scans(self._resume)
+        failed_scans = self.load_failed_scans(self._resume)
         new_scans = self.find_new_scans(completed_scans, failed_scans)
         slices = self.select_slices_from_scans(new_scans, completed_scans, failed_scans)
         for slice in slices:

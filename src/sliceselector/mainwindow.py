@@ -6,7 +6,9 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QPushButton,
     QFileDialog,
+    QComboBox,
     QLabel,
+    QCheckBox,
     QMessageBox,
     QLineEdit,
     QProgressBar,
@@ -38,6 +40,10 @@ class MainWindow(QMainWindow):
             placeholderText='Choose output directory...', text=self._settings.get('mainwindow/output_dir', ''))
         self._output_dir_select_button = QPushButton('Select...')
         self._output_dir_select_button.clicked.connect(self.handle_output_dir_select_button)
+        self._vertebra_combobox = QComboBox(self)
+        self._vertebra_combobox.addItems(['L3', 'T4'])
+        self._resume_checkbox = QCheckBox('Resume', self)
+        self._resume_checkbox.setChecked(True)
         self._button = QPushButton('Run process')
         self._button.clicked.connect(self.handle_button)
         self._cancel_button = QPushButton('Cancel')
@@ -77,6 +83,9 @@ class MainWindow(QMainWindow):
         layout.setAlignment(Qt.AlignmentFlag.AlignTop)        
         layout.addLayout(root_dir_layout)
         layout.addLayout(output_dir_layout)
+        layout.addWidget(QLabel('Select vertebra'))
+        layout.addWidget(self._vertebra_combobox)
+        layout.addWidget(self._resume_checkbox)
         layout.addWidget(self._button)
         layout.addWidget(self._cancel_button)
         layout.addWidget(self._progress_bar)
@@ -113,12 +122,18 @@ class MainWindow(QMainWindow):
                     if not os.path.isdir(output_dir):
                         os.makedirs(output_dir, exist_ok=True)
                     self._progress_bar.setValue(0)
-                    self._process = SliceSelectProcess(inputs={'root_directory': root_dir}, output=output_dir, vertebra='T4')
+                    self._process = SliceSelectProcess(
+                        inputs={'root_directory': root_dir}, 
+                        output=output_dir, 
+                        vertebra=self._vertebra_combobox.currentText(),
+                        resume=self._resume_checkbox.isChecked(),
+                    )
                     self._process.progress.connect(self.handle_progress)
                     self._process.canceled.connect(self.handle_canceled)
                     self._process.failed.connect(self.handle_failed)
                     self._process.finished.connect(self.handle_finished)
                     self._process_runner.start(self._process)
+                    self._button.setEnabled(False)
                 else:
                     QMessageBox.warning(self, 'Warning', 'Output directory empty')
             else:
@@ -142,13 +157,16 @@ class MainWindow(QMainWindow):
 
     def handle_canceled(self):
         print(f'find canceled')
+        self._button.setEnabled(True)
 
     def handle_failed(self, e):
         print(f'find failed: {e}')
+        self._button.setEnabled(True)
 
     def handle_finished(self, output):
         self._progress_bar.setValue(100)
         print(output)
+        self._button.setEnabled(True)
 
     # HELPERS
 
