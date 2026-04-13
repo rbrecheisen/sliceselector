@@ -1,6 +1,6 @@
 [project]
-name = "sliceselector"
-version = "0.1.0"
+name = "mosamatic-sliceselector"
+version = "1.0.0"
 description = ""
 readme = "README.md"
 requires-python = ">=3.11,<3.12"
@@ -22,10 +22,12 @@ dependencies = [
     "totalsegmentator>=2.11.0",
     "simpleitk>=2.5.2", 
     "matplotlib",
+    "click",
 ]
 
 [project.scripts]
 sliceselector = "sliceselector.app:main"
+sliceselector-cli = "sliceselector.cli:main"
 
 [project.optional-dependencies]
 dev = [

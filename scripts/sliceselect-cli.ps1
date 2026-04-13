@@ -1,0 +1,1 @@
+sliceselector-cli sliceselect --scans "M:/data/lauracools/testt4selectiontotalseg/original_unzipped_nodots" --output "M:/data/lauracools/testt4selectiontotalseg/output" --vertebra T4
