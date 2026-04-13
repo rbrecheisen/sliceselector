@@ -1,4 +1,4 @@
-$VERSION = "1.0.0"
+$VERSION = "latest"
 $SCANS = "M:\data\lauracools\testt4selectiontotalseg\original_unzipped_nodots"
 $VERTEBRA = "L3"
 $OUTPUT = "M:\data\lauracools\testt4selectiontotalseg\output"
