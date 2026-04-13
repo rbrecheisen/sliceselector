@@ -1,1 +1,1 @@
-docker build --no-cache -t brecheisen/sliceselector-cli:2.0.36 .
+docker build --no-cache -t brecheisen/sliceselector-cli:1.0.0 .

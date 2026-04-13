@@ -3,7 +3,7 @@ import time
 import json
 import warnings
 from pathlib import Path
-from sliceselector.processes.process import Process
+from sliceselector.processes.processnoqt import ProcessNoQt
 from sliceselector.utils import load_dicom
 from sliceselector.processes.sliceselect.sliceselector import SliceSelector
 from sliceselector.utils import LogManager
@@ -14,7 +14,7 @@ warnings.filterwarnings(
 LOG = LogManager()
 
 
-class SliceSelectProcess(Process):
+class SliceSelectProcess(ProcessNoQt):
     def __init__(self, inputs, output, vertebra, resume=True):
         super(SliceSelectProcess, self).__init__(inputs, output)
         self._root_directory = inputs.get('root_directory', None)
