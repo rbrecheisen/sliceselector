@@ -1,0 +1,2 @@
+class SegmentatorException(Exception):
+    pass

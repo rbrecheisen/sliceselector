@@ -1,0 +1,2 @@
+class SliceFinderException(Exception):
+    pass
