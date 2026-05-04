@@ -16,9 +16,10 @@ LOG = LogManager()
 
 
 class SliceSelector:
-    def __init__(self, scan, vertebra, output_dir):
+    def __init__(self, scan, vertebra, patient_dir_idx, output_dir):
         self._scan = scan
         self._vertebra = vertebra
+        self._patient_dir_idx = patient_dir_idx
         self._vertebra_file = f'vertebrae_{vertebra}.nii.gz'
         self._output_dir = output_dir
         self._errors = []
@@ -96,14 +97,19 @@ class SliceSelector:
             self.extract_masks(self._scan['path'])
             path_to_slice, z_vert = self.find_slice(self._scan['path'], self._vertebra)
             if path_to_slice is not None:
-                scan_name = os.path.split(self._scan['path'])[1]
+                # Do not take name of scan directory because it may not be unique across scans
+                # Take the patient identifying directory name
+                dir_names = self._scan['path'].split(os.path.sep)
+                if self._patient_dir_idx >= len(dir_names):
+                    raise Exception(f'patient_dir_idx is larger than length directory names: ({self._patient_dir_idx} -> {len(dir_names)})')
+                patient_id = dir_names[self._patient_dir_idx] 
                 extension = '' if path_to_slice.endswith('.dcm') else '.dcm'
-                target_file_path = os.path.join(self._output_dir, self._vertebra + '_' + scan_name + extension)
+                target_file_path = os.path.join(self._output_dir, self._vertebra + '_' + patient_id + extension)
+                LOG.info(f'Writing to L3 file: {target_file_path}')
                 shutil.copyfile(path_to_slice, target_file_path)
-
                 # Create sagittal image
                 mask_file = os.path.join(TOTAL_SEGMENTATOR_OUTPUT_DIR, f'vertebrae_{self._vertebra}.nii.gz')
-                output_png = os.path.join(self._output_dir, f"{self._vertebra}_{scan_name}_sagittal.png")
+                output_png = os.path.join(self._output_dir, f"{self._vertebra}_{patient_id}_sagittal.png")
                 plotter = SagittalSlicePlotter(
                     scan_dir=self._scan['path'],
                     mask_file=mask_file,
@@ -111,7 +117,6 @@ class SliceSelector:
                     output_png=output_png,
                 )
                 plotter.plot()
-
             return Result(path_to_slice, self._errors)
         except Exception as e:
             raise e

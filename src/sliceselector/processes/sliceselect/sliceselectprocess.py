@@ -15,10 +15,11 @@ LOG = LogManager()
 
 
 class SliceSelectProcess(ProcessNoQt):
-    def __init__(self, inputs, output, vertebra, resume=True):
+    def __init__(self, inputs, output, vertebra, patient_dir_idx, resume=True):
         super(SliceSelectProcess, self).__init__(inputs, output)
         self._root_directory = inputs.get('root_directory', None)
         self._vertebra = vertebra
+        self._patient_dir_idx = patient_dir_idx
         self._resume = resume
         LOG.info(f'Running SliceSelectProcess from root directory {self._root_directory} (resume: {self._resume})')
 
@@ -89,17 +90,20 @@ class SliceSelectProcess(ProcessNoQt):
         worked, then the scan is added to the completed scans. If not, it is added to the 
         failed scans. The selected slices will be returned as a list of file paths.
         """
-        nr_steps = len(scans.keys())
         step = 0
         selected_slices = []
         for suid in scans.keys():
             if self.is_canceled():
                 LOG.info('Slice selection was canceled')
                 self.update_completed_and_failed_scans(completed_scans, failed_scans)
-                self.canceled.emit()
                 break
             try:
-                selector = SliceSelector(scan=scans[suid], vertebra=self._vertebra, output_dir=self.output())
+                selector = SliceSelector(
+                    scan=scans[suid], 
+                    vertebra=self._vertebra, 
+                    patient_dir_idx=self._patient_dir_idx,
+                    output_dir=self.output(),
+                )
                 result = selector.run()
                 if result.has_errors():
                     failed_scans[suid] = scans[suid]
@@ -112,7 +116,6 @@ class SliceSelectProcess(ProcessNoQt):
                 failed_scans[suid] = scans[suid]
                 failed_scans[suid]['errors'] = str(e)
                 LOG.info(f'Exception processing scan {suid} ({str(e)}). Skipping...')
-            self.progress.emit(step, nr_steps)
             step += 1
         self.update_completed_and_failed_scans(completed_scans, failed_scans)
         return selected_slices

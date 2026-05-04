@@ -21,7 +21,14 @@ from sliceselector.processes.sliceselect.sliceselectprocess import SliceSelectPr
     default='L3',
     help='Vertebral level for selecting slice (default: "L3", options: "L3", "T4")'
 )
-def sliceselect(scans, vertebra, output):
+@click.option(
+    '--patient_dir_idx',
+    required=True,
+    default=0,
+    type=int,
+    help='Index patient identifying directory name in scan directory (including drive letter)',
+)
+def sliceselect(scans, vertebra, output, patient_dir_idx):
     """
     Selects specific slice from list of CT scans
     
@@ -38,11 +45,17 @@ def sliceselect(scans, vertebra, output):
 
     --vertebra : str
         Vertebral level where to take slice (default: L3, options: L3, T4)
+
+    --patient_dir_idx : int
+        Index of patient identifying directory name in current scan directory. E.g.,
+        if scan directory is: C:\a\b\c\d and patient_dir_idx=2, the patient identifying
+        directory name is "b" because the drive letter C: is index 0
     """
     process = SliceSelectProcess(
         inputs={'root_directory': scans},
         output=output,
         vertebra=vertebra,
+        patient_dir_idx=patient_dir_idx,
         resume=True,
     )
     process.execute()
