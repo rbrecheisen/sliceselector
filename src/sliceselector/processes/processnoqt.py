@@ -1,7 +1,11 @@
+import os
+
+
 class ProcessNoQt:
     def __init__(self, inputs, output, params=None, parent=None):
         self._inputs = inputs
         self._output = output
+        os.makedirs(self._output, exist_ok=True)
         self._params = params
         self._cancel = False
         self._thread = None
