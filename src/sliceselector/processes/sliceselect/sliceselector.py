@@ -7,6 +7,7 @@ import numpy as np
 from totalsegmentator.python_api import totalsegmentator
 from sliceselector.processes.sliceselect.result import Result
 from sliceselector.processes.sliceselect.sagittalimageplotter import SagittalSlicePlotter
+from sliceselector.processes.sliceselect.imageplotter import ImagePlotter
 from sliceselector.utils import LogManager, load_dicom
 
 TOTAL_SEGMENTATOR_OUTPUT_DIR = os.path.join(tempfile.gettempdir(), 'total_segmentator_output')
@@ -117,6 +118,10 @@ class SliceSelector:
                     output_png=output_png,
                 )
                 plotter.plot()
+                # Create PNG image of the DICOM slice as well, for easier manual review
+                png_output = os.path.join(self._output_dir, f'{self._vertebra}_{patient_id}_axial.png')
+                png_plotter = ImagePlotter(dcm_file=path_to_slice, output_png=png_output)
+                png_plotter.plot()
             return Result(path_to_slice, self._errors)
         except Exception as e:
             raise e
