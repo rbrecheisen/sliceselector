@@ -27,15 +27,15 @@ class ImagePlotter:
             ww = float(ww)
             lower = wc - ww / 2
             upper = wc + ww / 2
-            arr = np.clip(arr, lower, upper)
+            pixels = np.clip(pixels, lower, upper)
         else:
-            arr = np.clip(arr, np.percentile(arr, 1), np.percentile(arr, 99))
+            pixels = np.clip(pixels, np.percentile(pixels, 1), np.percentile(pixels, 99))
         # Normalize to 8-bit
-        arr = arr - arr.min()
-        arr = arr / arr.max()
-        arr = (arr * 255).astype(np.uint8)
+        pixels = pixels - pixels.min()
+        pixels = pixels / pixels.max()
+        pixels = (pixels * 255).astype(np.uint8)
         # Invert if MONOCHROME1
         if getattr(p, 'PhotometricInterpretation', '') == 'MONOCHROME1':
-            arr = 255 - arr
-        img = Image.fromarray(arr)
+            pixels = 255 - pixels
+        img = Image.fromarray(pixels)
         img.save(self._output_png)
