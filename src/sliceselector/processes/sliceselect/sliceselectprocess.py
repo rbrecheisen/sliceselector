@@ -107,13 +107,16 @@ class SliceSelectProcess(ProcessNoQt):
                 result = selector.run()
                 if result.has_errors():
                     failed_scans[suid] = scans[suid]
+                    failed_scans[suid]['files'] = []
                     failed_scans[suid]['errors'] = result.errors()
                     LOG.info(f'Error processing scan {suid} ({result.errors()}). Skipping...')
                 else:
                     completed_scans[suid] = scans[suid]
+                    completed_scans[suid]['files'] = []
                     selected_slices.append(result.data())
             except Exception as e:
                 failed_scans[suid] = scans[suid]
+                failed_scans[suid]['files'] = []
                 failed_scans[suid]['errors'] = str(e)
                 LOG.info(f'Exception processing scan {suid} ({str(e)}). Skipping...')
             step += 1
