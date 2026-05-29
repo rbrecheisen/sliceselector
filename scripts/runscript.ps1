@@ -7,7 +7,8 @@
 # $SCANS = "M:\data\corpus\12-05-2026\transfer_3571410_files_e8ca9a77\Ontbrekende patienten CORPUS study\Ontbrekende patienten CORPUS study"
 # $SCANS = "M:\data\corpus\13-05-2026\Ontbrekende patienten CORPUS study - nieuwe scans\Ontbrekende patienten CORPUS study - nieuwe scans"
 # $SCANS = "M:\data\corpus\13-05-2026\EMC176\EMC176"
-$SCANS = "M:\data\corpus\21-05-2026\CZE-scans set voor CORPUS studie\Corpus_6f8cc67c81d5446c846b35f23e249595"
+# $SCANS = "M:\data\corpus\21-05-2026\CZE-scans set voor CORPUS studie\Corpus_6f8cc67c81d5446c846b35f23e249595"
+$SCANS = "M:\data\corpus\29-05-2026\original\missing_LUMC"
 
 # $OUTPUT = "M:\data\corpus\06-05-2026\CT scans EMC voor CORPUS study\CT scans EMC 2.0\Deel 1\L3"
 # $OUTPUT = "M:\data\corpus\06-05-2026\CT scans EMC voor CORPUS study\CT scans EMC 2.0\Deel 2\L3"
@@ -17,7 +18,8 @@ $SCANS = "M:\data\corpus\21-05-2026\CZE-scans set voor CORPUS studie\Corpus_6f8c
 # $OUTPUT = "M:\data\corpus\12-05-2026\transfer_3571410_files_e8ca9a77\Ontbrekende patienten CORPUS study\L3"
 # $OUTPUT = "M:\data\corpus\13-05-2026\Ontbrekende patienten CORPUS study - nieuwe scans\L3"
 # $OUTPUT = "M:\data\corpus\13-05-2026\EMC176\L3"
-$OUTPUT = "M:\data\corpus\21-05-2026\CZE-scans set voor CORPUS studie\L3"
+# $OUTPUT = "M:\data\corpus\21-05-2026\CZE-scans set voor CORPUS studie\L3"
+$OUTPUT = "M:\data\corpus\29-05-2026\L3"
 
 $VERTEBRA = "L3"
 $PATIENT_DIR_IDX = 6
